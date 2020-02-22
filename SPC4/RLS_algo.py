@@ -19,7 +19,7 @@ from array import array
 *                                        +                    *
 *-------------------------------------------------------------*
 
-U(k)- step
+U(k)- noise
 
 Y_k= a*Y_(k-1)+b*U_(k)+Z_u(k)
 
@@ -38,8 +38,7 @@ def System(U,a,b,Z):
 
     for k in range(1,len(U)):
         
-        #Y.append(a*Y[k-1] +b*U[k-1])
-        Y.append(a*Y[k-1] +b*U[k-1]+Z[k-1])
+        Y.append(a*Y[k-1] +b*U[k-1]+ (Z[k-1]/100))
     
     return Y;
 
@@ -52,6 +51,7 @@ def System_lin(a,b,Z):
         Y.append(a*k +b*+Z[k-1])
     
     return Y;
+
 def Opt_ster(K,a,b,Y,Z):
     U=[]
     for k in range(len(K)):
@@ -61,67 +61,83 @@ def Opt_ster(K,a,b,Y,Z):
 def Opt_ster_est(k,a_es,b_es,Y,Z):
     U=((Y-a_es-Z[k])/b_es)
     return U
+def plot_part11(K_t,a,b, U):
+   
+    plt.grid(linewidth=2)
+    plt.plot(K_t,U)
+    plt.plot(a)
+    plt.title("Odpowiedz systemu na wzbudzenie szumem")
+    #plt.show();
+    
 
-#CZ1-----------------------------------------------------------------------------------    
-K_t = np.linspace(0,1999,2000)
-Z=np.random.randn(1,len(K_t))*0.5
-Z=np.asarray(Z)
-Z=np.asarray(Z).squeeze()
-step=Step(len(K_t))
-U=np.random.rand(len(K_t))
-Y=System(U,0.5,1,Z)
-Y=System_lin(0.7,20,Z)
+def RLS(Y_old,Y_new,U_new, P, theta, alpha) :
+    
+    phi = np.array( ([ [Y_old] , [U_new ]] ))   
+    P_old = P
+    
+    tmp1=np.dot(P_old,phi)
+    tmp2=np.dot(tmp1,phi.transpose())
+    tmp3=np.dot(tmp2,P_old)
+    
+    tmp4=np.dot(phi.transpose(),P_old)
+    tmp5=np.dot(tmp4,phi)
+    tmp5=tmp5+alpha
 
-#plt.plot(K_t,U)
-#plt.plot(K_t,Y)
-#plt.show()
+    P = (P_old- (tmp3/tmp5))/alpha
+
+    
+    tmp8 = np.dot(P,phi) 
+    tmp9 = np.dot(phi.transpose(),theta)
+    tmp10 = Y_new - tmp9
+    
+    tmp11 = np.dot(tmp8, tmp10)
+    theta = theta + tmp11
+    
+    return theta,P
 
 
+#Global Parametrers--------------------------------
 
-
-#CZ2-----------------------------------------------------------------------------------    
-
-def rlse_online(aT_k1,b_k1,x,P,alpha): # pierwszy argument to [zmienna niezalezna: 1] drugi argument to Y od iteratora do konca , trzeci 
-
-    K = np.dot(P,aT_k1.T)/(np.dot(np.dot(aT_k1,P),aT_k1.T)+1)
-    x = x +K*(b_k1-np.dot(aT_k1,x))
-    P = (P-np.dot(K,np.dot(aT_k1,P)))
-    return x,K,P
-
-
-Ya=np.array([Y]).T
-
+K_t = np.linspace(0,8000,8000)
+a=0.89
+b=50
 n = 2
-vals = np.array([[0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0]]).T
-P = np.eye(n,n)*1000.
-x = np.zeros((n,1))
+P = np.eye(n,n)*1000
+theta= np.array([0,0])
 
-Y_lin=[]
+
+#PART11-----------------------------------------------------------------------------------    
+
+
+Z=np.random.randn(1,len(K_t)) # noise generation
+Z=np.asarray(Z)          #array transformation
+Z=np.asarray(Z).squeeze()       # fitting sizes 
+U=np.random.rand(len(K_t))     # Noise input 
+Y=System(U,a,b,Z)             # computing system response 
+    
+
+
+
+#PART12-----------------------------------------------------------------------------------    
+
+# initialization parameters
 
 A=[]
 B=[]
-U_est=[]
-a=0.5
-b=10
 
-for i in range(len(K_t)):
-    Y_lin.append(i)
-    Y_lina=np.array(Y_lin)
+for k in range(1,len(K_t)):
+    theta, P = RLS( Y[k-1], Y[k], U[k], P, theta, 1 )
+print(theta)
 
-
-for k in range(len(K_t)):
-    x,K,P = rlse_online(np.array([[K_t[k],1]]),Ya[k,:],x,P,0.5)
-    
-    #a_est=x[0]
-    #b_est=x[1]
-    
-    A.append(x[0])
+   
+    A.append(x[0])                      
     B.append(x[1])
     
     U_est.append(Opt_ster_est(k,A[k], B[k],1,Z))
+ 
+ 
+"""
 
-
-np.
 plt.grid(linewidth=2)
 plt.plot(K_t,A)
 plt.plot(a)
@@ -146,4 +162,7 @@ plt.show();
 
 
 
+
+
+"""
 
