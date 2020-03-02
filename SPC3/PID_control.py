@@ -1,12 +1,11 @@
 import numpy as np
-import cmath
 from scipy import signal
 from numpy.polynomial import polynomial as P 
 from PID import PID
 from PID import Control_System
-import control 
 from control.matlab import lsim as sim
 import matplotlib.pyplot as plt
+import control
 from control import *
 from control.matlab import *
 
@@ -20,8 +19,6 @@ s0=0
 s1=pow(T1,-1)
 s2=pow(T2,-1)
 mian=P.polyfromroots([s0,-s1,-s2])
-#print(mian)
-#mian=reversed(mian)
 
 K_o=control.TransferFunction([b],mian)
 #print(K_o)
